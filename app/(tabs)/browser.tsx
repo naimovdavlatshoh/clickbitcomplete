@@ -8,36 +8,21 @@ import {
     Image,
     TextInput,
     StatusBar,
+    Linking, // Import Linking for URL navigation
 } from "react-native";
 import { Colors } from "@/constants/Colors";
 // @ts-ignore
 import Banner from "@/assets/images/banner.png";
 // @ts-ignore
-import Tonvpn from "@/assets/images/tonvpn.png";
-// @ts-ignore
-import Mobile from "@/assets/images/mobile.png";
-// @ts-ignore
 import Clickbit from "@/assets/images/clickbit.png";
-// @ts-ignore
-import Ticket from "@/assets/images/ticket.png";
-// @ts-ignore
-import EMCD from "@/assets/images/emcd.png";
-// @ts-ignore
-import Mercury from "@/assets/images/mercury.png";
-// @ts-ignore
-import Avanch from "@/assets/images/avanch.png";
-// @ts-ignore
-import Lets from "@/assets/images/lets.png";
-// @ts-ignore
-import First from "@/assets/images/first.png";
-// @ts-ignore
-import Second from "@/assets/images/second.png";
-// @ts-ignore
-import Third from "@/assets/images/third.png";
-// @ts-ignore
-import Fourth from "@/assets/images/fourth.png";
 
 export default function ExploreScreen() {
+    const handleClickBitPress = () => {
+        Linking.openURL("https://test.bukhara-best.uz/swagger/").catch((err) =>
+            console.error("Failed to open URL:", err)
+        );
+    };
+
     return (
         <View style={styles.container}>
             <StatusBar barStyle="light-content" />
@@ -60,7 +45,7 @@ export default function ExploreScreen() {
                 {/* Banner */}
                 <View style={styles.banner}>
                     <Image
-                        source={Banner} // Replace with your actual banner path
+                        source={Banner}
                         style={styles.bannerImage}
                         resizeMode="cover"
                     />
@@ -73,55 +58,15 @@ export default function ExploreScreen() {
                             name: "ClickBit",
                             icon: Clickbit,
                         },
-                        { name: "Ton VPN", icon: Tonvpn },
-                        { name: "Mobile", icon: Mobile },
-                        { name: "Ticketz", icon: Ticket },
                     ].map((app, index) => (
-                        <View key={index} style={styles.appItem}>
+                        <TouchableOpacity
+                            key={index}
+                            style={styles.appItem}
+                            onPress={handleClickBitPress}
+                        >
                             <Image source={app.icon} style={styles.appIcon} />
                             <Text style={styles.appLabel}>{app.name}</Text>
-                        </View>
-                    ))}
-                </View>
-
-                {/* Exchanges */}
-                <Text style={styles.sectionTitle}>Exchanges</Text>
-                <View style={styles.iconRow}>
-                    {[
-                        {
-                            name: "Mercuryo",
-                            icon: Mercury,
-                        },
-                        { name: "EMCD NOW", icon: EMCD },
-                        {
-                            name: "LetsExchange",
-                            icon: Lets,
-                        },
-                        {
-                            name: "Avanchange",
-                            icon: Avanch,
-                        },
-                    ].map((app, index) => (
-                        <View key={index} style={styles.appItem}>
-                            <Image source={app.icon} style={styles.appIcon} />
-                            <Text style={styles.appLabel}>{app.name}</Text>
-                        </View>
-                    ))}
-                </View>
-
-                {/* DeFi */}
-                <Text style={styles.sectionTitle}>DeFi</Text>
-                <View style={styles.iconRow}>
-                    {[
-                        { name: "App1", icon: First },
-                        { name: "App2", icon: Second },
-                        { name: "App3", icon: Third },
-                        { name: "App4", icon: Fourth },
-                    ].map((app, index) => (
-                        <View key={index} style={styles.appItem}>
-                            <Image source={app.icon} style={styles.appIcon} />
-                            <Text style={styles.appLabel}>{app.name}</Text>
-                        </View>
+                        </TouchableOpacity>
                     ))}
                 </View>
 
@@ -141,7 +86,7 @@ export default function ExploreScreen() {
 const styles = StyleSheet.create({
     container: {
         backgroundColor: Colors.dark.background,
-        paddingTop: 80,
+        paddingTop: 40,
         paddingHorizontal: 16,
         flex: 1,
     },

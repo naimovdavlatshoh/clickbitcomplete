@@ -10,6 +10,8 @@ import {
     Clipboard,
     Alert,
     StatusBar,
+    Platform,
+    SafeAreaView,
 } from "react-native";
 import { Colors } from "@/constants/Colors";
 import { Link } from "expo-router";
@@ -20,8 +22,10 @@ import axios from "axios";
 interface DataState {
     ton_balance: string;
     non_bounceable_address: string;
-    qr_code?: string; // Backenddan rasm URL yoki base64 sifatida keladi
+    qr_code?: string;
 }
+
+const { width, height } = Dimensions.get("window");
 
 export default function Show() {
     const [copied, setCopied] = useState(false);
@@ -71,117 +75,226 @@ export default function Show() {
     }, []);
 
     return (
-        <View style={styles.modalContainer}>
-            <StatusBar barStyle="light-content" />
-            <Link href="../" style={styles.settingsIcon}>
-                <Ionicons name="chevron-back-outline" size={24} color="white" />
-            </Link>
-            <View style={styles.container}>
-                <Text style={styles.headerTitle}>Receive Toncoin</Text>
-                <Text style={styles.headerDesc}>
-                    Send only Toncoin TON and tokens in TON network to this
-                    address, or you might lose your funds
-                </Text>
-            
-                <View style={styles.qrcontainer}>
-                    {data?.qr_code ? (
-                        <Image
-                            source={{ uri: data?.qr_code }} // Backenddan kelgan rasm URL yoki base64
-                            style={{
-                                width: 300,
-                                height: 300,
-                                resizeMode: "contain",
-                                marginBottom: 20,
-                            }}
+        <SafeAreaView style={styles.safeArea}>
+            <View style={styles.modalContainer}>
+                <StatusBar
+                    barStyle="light-content"
+                    backgroundColor={Colors.dark.background}
+                    translucent={false}
+                />
+
+                <View style={styles.header}>
+                    <Link href="../" style={styles.backButton}>
+                        <Ionicons
+                            name="chevron-back-outline"
+                            size={24}
+                            color="white"
                         />
-                    ) : (
-                        <Text style={styles.cardText}>Loading QR Code...</Text>
-                    )}
-                    <Text style={styles.cardText}>
-                        {data?.non_bounceable_address}
-                    </Text>
+                    </Link>
                 </View>
-                <View style={styles.actionbtns}>
-                    <Pressable style={styles.actionbtn} onPress={handleCopy}>
-                        <Ionicons
-                            name="copy-outline"
-                            size={18}
-                            color="#AFAFAF"
-                        />
-                        <Text style={styles.actionbtnText}>
-                            {copied ? "Copied" : "Copy"}
+
+                <View style={styles.container}>
+                    <View style={styles.titleContainer}>
+                        <Text style={styles.headerTitle}>Receive Toncoin</Text>
+                        <Text style={styles.headerDesc}>
+                            Send only Toncoin TON and tokens in TON network to
+                            this address, or you might lose your funds
                         </Text>
-                    </Pressable>
-                    <Pressable style={styles.actionbtn} onPress={handleShare}>
-                        <Ionicons
-                            name="share-outline"
-                            size={18}
-                            color="#AFAFAF"
-                        />
-                        <Text style={styles.actionbtnText}>Share</Text>
-                    </Pressable>
+                    </View>
+
+                    <View style={styles.qrSection}>
+                        <View style={styles.qrContainer}>
+                            {data?.qr_code ? (
+                                <Image
+                                    source={{ uri: data?.qr_code }}
+                                    style={styles.qrImage}
+                                />
+                            ) : (
+                                <View style={styles.qrPlaceholder}>
+                                    <Text style={styles.loadingText}>
+                                        Loading QR Code...
+                                    </Text>
+                                </View>
+                            )}
+                        </View>
+
+                        <View style={styles.addressContainer}>
+                            <Text style={styles.addressText} numberOfLines={3}>
+                                {data?.non_bounceable_address ||
+                                    "Loading address..."}
+                            </Text>
+                        </View>
+                    </View>
+
+                    <View style={styles.actionContainer}>
+                        <Pressable
+                            // @ts-ignore
+                            style={[styles.actionBtn, styles.copyBtn]}
+                            onPress={handleCopy}
+                            android_ripple={{ color: "rgba(255,255,255,0.1)" }}
+                        >
+                            <Ionicons
+                                name="copy-outline"
+                                size={18}
+                                color="#AFAFAF"
+                            />
+                            <Text style={styles.actionBtnText}>
+                                {copied ? "Copied" : "Copy"}
+                            </Text>
+                        </Pressable>
+
+                        <Pressable
+                            style={[styles.actionBtn, styles.shareBtn]}
+                            onPress={handleShare}
+                            android_ripple={{ color: "rgba(255,255,255,0.1)" }}
+                        >
+                            <Ionicons
+                                name="share-outline"
+                                size={18}
+                                color="#AFAFAF"
+                            />
+                            <Text style={styles.actionBtnText}>Share</Text>
+                        </Pressable>
+                    </View>
                 </View>
             </View>
-        </View>
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    modalContainer: {
+    safeArea: {
+        flex: 1,
         backgroundColor: Colors.dark.background,
-        padding: 20,
-        height: Dimensions.get("window").height * 0.93,
     },
-    settingsIcon: {
-        marginBottom: 20,
+    modalContainer: {
+        flex: 1,
+        backgroundColor: Colors.dark.background,
+        paddingBottom:30
+    },
+    header: {
+        paddingHorizontal: 20,
+        paddingTop: Platform.OS === "android" ? 40 : 20,
+        paddingBottom: 10,
+    },
+    backButton: {
+        alignSelf: "flex-start",
     },
     container: {
         flex: 1,
         paddingHorizontal: 20,
+        justifyContent: "space-between",
+    },
+    titleContainer: {
+        marginTop: 20,
+        marginBottom: 30,
     },
     headerTitle: {
         color: "#fff",
-        fontSize: 18,
+        fontSize: 22,
         fontWeight: "bold",
         textAlign: "center",
-        marginBottom: 20,
+        marginBottom: 15,
+        letterSpacing: 0.5,
     },
     headerDesc: {
-        color: "#ccc",
+        color: "#AFAFAF",
         fontSize: 14,
-        marginBottom: 20,
         textAlign: "center",
+        lineHeight: 20,
+        paddingHorizontal: 10,
     },
-    qrcontainer: {
-        alignItems: "center",
+    qrSection: {
+        flex: 1,
         justifyContent: "center",
+        alignItems: "center",
+        marginVertical: 20,
+    },
+    qrContainer: {
         backgroundColor: "white",
+        borderRadius: 20,
         padding: 20,
+        marginBottom: 25,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 2,
+        },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
+        elevation: 5,
+    },
+    qrImage: {
+        width: width * 0.65,
+        height: width * 0.65,
+        maxWidth: 280,
+        maxHeight: 280,
+        resizeMode: "contain",
+    },
+    qrPlaceholder: {
+        width: width * 0.65,
+        height: width * 0.65,
+        maxWidth: 280,
+        maxHeight: 280,
+        justifyContent: "center",
+        alignItems: "center",
+        backgroundColor: "#f5f5f5",
         borderRadius: 10,
     },
-    cardText: {
-        fontSize: 14,
+    loadingText: {
+        fontSize: 16,
+        color: "#666",
         textAlign: "center",
     },
-    actionbtns: {
+    addressContainer: {
+        backgroundColor: "rgba(255,255,255,0.1)",
+        borderRadius: 15,
+        paddingHorizontal: 20,
+        paddingVertical: 15,
+        marginHorizontal: 10,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.2)",
+    },
+    addressText: {
+        fontSize: 13,
+        color: "#fff",
+        textAlign: "center",
+        fontFamily: Platform.OS === "ios" ? "Courier" : "monospace",
+        lineHeight: 18,
+    },
+    actionContainer: {
         flexDirection: "row",
         justifyContent: "center",
-        gap: 20,
-        marginTop: 20,
+        gap: 15,
+        paddingBottom: Platform.OS === "android" ? 30 : 20,
+        paddingHorizontal: 20,
     },
-    actionbtn: {
+    actionBtn: {
         backgroundColor: "#1A2533",
-        paddingVertical: 10,
-        paddingHorizontal: 10,
-        borderRadius: 20,
+        paddingVertical: 14,
+        paddingHorizontal: 24,
+        borderRadius: 25,
         flexDirection: "row",
         justifyContent: "center",
         alignItems: "center",
+        minWidth: 100,
+        shadowColor: "#000",
+        shadowOffset: {
+            width: 0,
+            height: 1,
+        },
+        shadowOpacity: 0.22,
+        shadowRadius: 2.22,
+        elevation: 3,
     },
-    actionbtnText: {
+
+    shareBtn: {
+        backgroundColor: "#1A2533",
+    },
+    actionBtnText: {
         color: "#fff",
         fontSize: 14,
-        fontWeight: "bold",
-        marginLeft: 4,
+        fontWeight: "600",
+        marginLeft: 6,
     },
 });

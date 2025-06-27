@@ -118,7 +118,7 @@ export default function HistoryScreen() {
                 // Log API response for debugging
                 console.log("API response:", data);
 
-                
+
                 const formattedTransactions =
                     data.transactions?.map((tx: any, index: number) => {
                         // Log each transaction data
@@ -260,7 +260,7 @@ const styles = StyleSheet.create({
     scrollContainer: {
         backgroundColor: Colors.dark.background,
         padding: 16,
-        paddingTop: 100,
+        paddingTop: 40,
         flex: 1,
     },
     title: {

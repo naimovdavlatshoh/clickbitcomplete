@@ -69,13 +69,9 @@ export default function AddWallet() {
                     "mnemonics",
                     JSON.stringify(mnemonics)
                 );
-                await AsyncStorage.setItem(
-                    "walletid",
-                    JSON.stringify(id)
-                );
+                await AsyncStorage.setItem("walletid", JSON.stringify(id));
             }
             // console.log(response?.data);
-
 
             router.push("/backup");
         } catch (error) {
@@ -102,9 +98,7 @@ export default function AddWallet() {
                 Back up your wallet manually by writing down the recovery
                 phrase.
             </Text>
-            <Text style={{color:"white"}}>{test}</Text>
 
-            {/* Wallet Name + Emoji */}
             <View
                 style={[
                     styles.inputContainer,

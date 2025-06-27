@@ -11,11 +11,17 @@ import {
     Modal,
     StatusBar,
     Clipboard,
+    Platform,
+    SafeAreaView,
+    KeyboardAvoidingView,
+    ScrollView,
 } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
-import { Link, useRouter } from "expo-router"; // Import useRouter
+import { Link, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+
+const { width, height } = Dimensions.get("window");
 
 export default function SendModal() {
     const [address, setAddress] = useState("");
@@ -28,9 +34,9 @@ export default function SendModal() {
     const [wallets, setWallets] = useState([]);
     const [selectedWallet, setSelectedWallet] = useState(null);
     const [selectedWalletName, setSelectedWalletName] = useState("TON");
-    const [successMessage, setSuccessMessage] = useState(""); // New state for success message
-    const [errorMessage, setErrorMessage] = useState(""); // New state for success message
-    const router = useRouter(); // Initialize router for navigation
+    const [successMessage, setSuccessMessage] = useState("");
+    const [errorMessage, setErrorMessage] = useState("");
+    const router = useRouter();
 
     // Fetch wallets from API when component mounts
     useEffect(() => {
@@ -93,20 +99,15 @@ export default function SendModal() {
                 const result = await response.json();
                 console.log("Response:", result);
 
-
-
-                
                 if (result.message) {
-                    setSuccessMessage(result.message); // Set the success message
-                    // Hide the message after 3 seconds and navigate to home
+                    setSuccessMessage(result.message);
                     setTimeout(() => {
                         setSuccessMessage("");
                     }, 3000);
                 } else {
                     setErrorMessage("Something went wrong please try again");
-
                     setTimeout(() => {
-                        setErrorMessage(""); // Clear the message
+                        setErrorMessage("");
                     }, 3000);
                 }
             } catch (error) {
@@ -118,201 +119,285 @@ export default function SendModal() {
     };
 
     return (
-        <View style={styles.modalContainer}>
-            <StatusBar barStyle="light-content" />
-            <View style={styles.topBar}>
-                <View style={styles.leftSpace} />
-                <Pressable style={styles.walletHeader}>
-                    <Text style={styles.walletText}>Send</Text>
-                </Pressable>
-                <Link href="../" style={styles.settingsIcon}>
-                    <Ionicons name="close-outline" size={24} color="white" />
-                </Link>
-            </View>
-
-            {/* Address input */}
-            <View
-                style={[
-                    styles.inputWrapper,
-                    addressFocus && styles.inputFocused,
-                ]}
+        <SafeAreaView style={styles.container}>
+            <StatusBar
+                barStyle="light-content"
+                backgroundColor={Colors.dark.background}
+                translucent={false}
+            />
+            <KeyboardAvoidingView
+                style={styles.keyboardAvoidingView}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
             >
-                <TextInput
-                    style={styles.inputWithIcons}
-                    placeholder="Address or name"
-                    placeholderTextColor="#888"
-                    value={address}
-                    onChangeText={setAddress}
-                    onFocus={() => setAddressFocus(true)}
-                    onBlur={() => setAddressFocus(false)}
-                />
-                <Pressable
-                    style={styles.pasteButton}
-                    onPress={handlePasteAddress}
+                <ScrollView
+                    contentContainerStyle={styles.scrollContent}
+                    showsVerticalScrollIndicator={false}
+                    keyboardShouldPersistTaps="handled"
                 >
-                    <Text style={styles.pasteText}>Paste</Text>
-                </Pressable>
-                <Link href={"/scanSend"} style={styles.rightIcon}>
-                    <Ionicons name="scan-outline" size={20} color="#888" />
-                </Link>
-            </View>
-
-            {/* Amount + Wallet Selector */}
-            <View
-                style={[
-                    styles.inputWrapper,
-                    amountFocus && styles.inputFocused,
-                    { paddingHorizontal: 0 },
-                ]}
-            >
-                <TextInput
-                    style={styles.inputAmountWithToken}
-                    placeholder="Amount"
-                    placeholderTextColor="#888"
-                    keyboardType="numeric"
-                    value={amount}
-                    onChangeText={setAmount}
-                    onFocus={() => setAmountFocus(true)}
-                    onBlur={() => setAmountFocus(false)}
-                />
-                <TouchableOpacity
-                    style={styles.tokenBox}
-                    onPress={() => setTokenModalVisible(true)}
-                >
-                    <Image
-                        source={require("../assets/images/ton.png")}
-                        style={{ width: 20, height: 20, marginRight: 10 }}
-                    />
-                    <Text style={styles.tokenText}>{selectedWalletName}</Text>
-                    <Ionicons
-                        name="chevron-down"
-                        size={16}
-                        color="white"
-                        style={{ marginLeft: 4 }}
-                    />
-                </TouchableOpacity>
-            </View>
-
-            {/* Wallet Selection Modal */}
-            <Modal
-                animationType="slide"
-                transparent={true}
-                visible={tokenModalVisible}
-                onRequestClose={() => setTokenModalVisible(false)}
-            >
-                <View style={styles.modalOverlay}>
-                    <View style={styles.tokenModal}>
-                        <View style={styles.modalHeader}>
-                            <Text style={styles.modalTitle}>Select Wallet</Text>
-                            <TouchableOpacity
-                                onPress={() => setTokenModalVisible(false)}
-                            >
+                    <View style={styles.modalContainer}>
+                        {/* Top Bar */}
+                        <View style={styles.topBar}>
+                            <View style={styles.leftSpace} />
+                            <View style={styles.walletHeader}>
+                                <Text style={styles.walletText}>Send</Text>
+                            </View>
+                            <Link href="../" style={styles.settingsIcon}>
                                 <Ionicons
                                     name="close-outline"
-                                    size={20}
+                                    size={24}
                                     color="white"
+                                />
+                            </Link>
+                        </View>
+
+                        {/* Address input */}
+                        <View
+                            style={[
+                                styles.inputWrapper,
+                                addressFocus && styles.inputFocused,
+                            ]}
+                        >
+                            <TextInput
+                                style={styles.inputWithIcons}
+                                placeholder="Address or name"
+                                placeholderTextColor="#888"
+                                value={address}
+                                onChangeText={setAddress}
+                                onFocus={() => setAddressFocus(true)}
+                                onBlur={() => setAddressFocus(false)}
+                            />
+                            <Pressable
+                                style={styles.pasteButton}
+                                onPress={handlePasteAddress}
+                            >
+                                <Text style={styles.pasteText}>Paste</Text>
+                            </Pressable>
+                            <Link href={"/scanSend"} style={styles.rightIcon}>
+                                <Ionicons
+                                    name="scan-outline"
+                                    size={20}
+                                    color="#888"
+                                />
+                            </Link>
+                        </View>
+
+                        {/* Amount + Wallet Selector */}
+                        <View
+                            style={[
+                                styles.inputWrapper,
+                                amountFocus && styles.inputFocused,
+                                { paddingHorizontal: 0 },
+                            ]}
+                        >
+                            <TextInput
+                                style={styles.inputAmountWithToken}
+                                placeholder="Amount"
+                                placeholderTextColor="#888"
+                                keyboardType="numeric"
+                                value={amount}
+                                onChangeText={setAmount}
+                                onFocus={() => setAmountFocus(true)}
+                                onBlur={() => setAmountFocus(false)}
+                            />
+                            <TouchableOpacity
+                                style={styles.tokenBox}
+                                onPress={() => setTokenModalVisible(true)}
+                                activeOpacity={0.7}
+                            >
+                                <Image
+                                    source={require("../assets/images/ton.png")}
+                                    style={styles.tokenImage}
+                                />
+                                <Text style={styles.tokenText}>
+                                    {selectedWalletName}
+                                </Text>
+                                <Ionicons
+                                    name="chevron-down"
+                                    size={16}
+                                    color="white"
+                                    style={styles.chevronIcon}
                                 />
                             </TouchableOpacity>
                         </View>
 
-                        {wallets?.map((wallet) => (
-                            <TouchableOpacity
-                                key={wallet.id}
-                                onPress={() => {
-                                    setSelectedWallet(wallet.id);
-                                    setSelectedWalletName(
-                                        wallet.currency || wallet.name || "TON"
-                                    );
-                                    setTokenModalVisible(false);
-                                }}
-                                style={styles.modalToken}
-                            >
-                                <Image
-                                    source={require("../assets/images/ton.png")}
-                                    style={{
-                                        width: 20,
-                                        height: 20,
-                                        marginRight: 10,
-                                    }}
-                                />
-                                <Text style={{ color: "white" }}>
-                                    {wallet.currency || wallet.name || "TON"}
-                                </Text>
+                        {/* Wallet Selection Modal */}
+                        <Modal
+                            animationType="slide"
+                            transparent={true}
+                            visible={tokenModalVisible}
+                            onRequestClose={() => setTokenModalVisible(false)}
+                            statusBarTranslucent={true}
+                        >
+                            <View style={styles.modalOverlay}>
+                                <View style={styles.tokenModal}>
+                                    <View style={styles.modalHeader}>
+                                        <Text style={styles.modalTitle}>
+                                            Select Wallet
+                                        </Text>
+                                        <TouchableOpacity
+                                            onPress={() =>
+                                                setTokenModalVisible(false)
+                                            }
+                                            style={styles.closeButton}
+                                            activeOpacity={0.7}
+                                        >
+                                            <Ionicons
+                                                name="close-outline"
+                                                size={24}
+                                                color="white"
+                                            />
+                                        </TouchableOpacity>
+                                    </View>
+
+                                    <View style={styles.walletList}>
+                                        {wallets?.map((wallet) => (
+                                            <TouchableOpacity
+                                                // @ts-ignore
+                                                key={wallet.id}
+                                                onPress={() => {
+                                                    {
+                                                        /* @ts-ignore */
+                                                    }
+                                                    setSelectedWallet(
+                                                        // @ts-ignore
+                                                        wallet.id
+                                                    );
+                                                    {
+                                                        /* @ts-ignore */
+                                                    }
+                                                    setSelectedWalletName(
+                                                        // @ts-ignore
+                                                        wallet.currency ||
+                                                            // @ts-ignore
+                                                            wallet.name ||
+                                                            "TON"
+                                                    );
+                                                    setTokenModalVisible(false);
+                                                }}
+                                                style={styles.modalToken}
+                                                activeOpacity={0.7}
+                                            >
+                                                <Image
+                                                    source={require("../assets/images/ton.png")}
+                                                    style={styles.tokenImage}
+                                                />
+                                                <Text
+                                                    style={
+                                                        styles.modalTokenText
+                                                    }
+                                                >
+                                                    {/* @ts-ignore */}
+                                                    {wallet.currency ||
+                                                        // @ts-ignore
+                                                        wallet.name ||
+                                                        "TON"}
+                                                </Text>
+                                            </TouchableOpacity>
+                                        ))}
+                                    </View>
+                                </View>
+                            </View>
+                        </Modal>
+
+                        {/* Remaining and MAX */}
+                        <View style={styles.remainingRow}>
+                            <Text style={styles.remainingText}>
+                                Remaining 0 {selectedWalletName}
+                            </Text>
+                            <TouchableOpacity activeOpacity={0.7}>
+                                <Text style={styles.maxText}>MAX</Text>
                             </TouchableOpacity>
-                        ))}
+                        </View>
+
+                        {/* Comment Input */}
+                        <View
+                            style={[
+                                styles.inputWrapper,
+                                commentFocus && styles.inputFocused,
+                            ]}
+                        >
+                            <TextInput
+                                style={styles.inputWithIcons}
+                                placeholder="Comment (optional)"
+                                placeholderTextColor="#888"
+                                value={comment}
+                                onChangeText={setComment}
+                                onFocus={() => setCommentFocus(true)}
+                                onBlur={() => setCommentFocus(false)}
+                            />
+                            <Pressable style={styles.pasteButton}>
+                                <Text style={styles.pasteText}>Paste</Text>
+                            </Pressable>
+                        </View>
+
+                        {/* Continue Button */}
+                        <TouchableOpacity
+                            style={[
+                                styles.continueButton,
+                                !(address && amount) &&
+                                    styles.continueButtonDisabled,
+                            ]}
+                            onPress={handleContinue}
+                            disabled={!(address && amount)}
+                            activeOpacity={0.8}
+                        >
+                            <Text style={styles.continueText}>Continue</Text>
+                        </TouchableOpacity>
+                    </View>
+                </ScrollView>
+            </KeyboardAvoidingView>
+
+            {/* Success/Error Messages */}
+            {(successMessage || errorMessage) && (
+                <View style={styles.messageContainer}>
+                    <View
+                        style={[
+                            styles.messageBox,
+                            successMessage
+                                ? styles.successMessage
+                                : styles.errorMessage,
+                        ]}
+                    >
+                        <Text style={styles.messageText}>
+                            {successMessage || errorMessage}
+                        </Text>
                     </View>
                 </View>
-            </Modal>
-
-            {/* Remaining and MAX */}
-            <View style={styles.remainingRow}>
-                <Text style={styles.remainingText}>
-                    Remaining 0 {selectedWalletName}
-                </Text>
-                <TouchableOpacity>
-                    <Text style={styles.maxText}>MAX</Text>
-                </TouchableOpacity>
-            </View>
-
-            {/* Comment Input */}
-            <View
-                style={[
-                    styles.inputWrapper,
-                    commentFocus && styles.inputFocused,
-                ]}
-            >
-                <TextInput
-                    style={styles.inputWithIcons}
-                    placeholder="Comment (optional)"
-                    placeholderTextColor="#888"
-                    value={comment}
-                    onChangeText={setComment}
-                    onFocus={() => setCommentFocus(true)}
-                    onBlur={() => setCommentFocus(false)}
-                />
-                <Pressable style={styles.pasteButton}>
-                    <Text style={styles.pasteText}>Paste</Text>
-                </Pressable>
-            </View>
-
-            {/* Continue Button */}
-            <TouchableOpacity
-                style={[
-                    styles.continueButton,
-                    !(address && amount) && styles.continueButtonDisabled,
-                ]}
-                onPress={handleContinue}
-                disabled={!(address && amount)}
-            >
-                <Text style={styles.continueText}>Continue</Text>
-            </TouchableOpacity>
-
-            {/* Success Message */}
-            {successMessage ? (
-                <View style={styles.successMessage}>
-                    <Text style={styles.successText}>{successMessage}</Text>
-                </View>
-            ) : null}
-            {errorMessage ? (
-                <View style={styles.errorMessage}>
-                    <Text style={styles.successText}>{errorMessage}</Text>
-                </View>
-            ) : null}
-        </View>
+            )}
+        </SafeAreaView>
     );
 }
 
 const styles = StyleSheet.create({
-    modalContainer: {
+    container: {
+        flex: 1,
         backgroundColor: Colors.dark.background,
-        padding: 20,
-        height: Dimensions.get("window").height * 0.93,
+    },
+    keyboardAvoidingView: {
+        flex: 1,
+    },
+    scrollContent: {
+        flexGrow: 1,
+    },
+    modalContainer: {
+        flex: 1,
+        backgroundColor: Colors.dark.background,
+        paddingHorizontal: 20,
+        paddingTop:
+            // @ts-ignore
+            Platform.OS === "android" ? StatusBar.currentHeight + 10 : 10,
+        paddingBottom: 20,
+        minHeight:
+            height -
+            (Platform.OS === "android" ? StatusBar.currentHeight || 0 : 0),
     },
     topBar: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
         marginBottom: 30,
+        paddingVertical: 10,
     },
     leftSpace: {
         width: 24,
@@ -330,43 +415,51 @@ const styles = StyleSheet.create({
         fontSize: 22,
         marginHorizontal: 5,
         fontWeight: "600",
+        textAlign: "center",
     },
     settingsIcon: {
         padding: 8,
+        borderRadius: 20,
     },
     inputWrapper: {
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: "#1D2633",
-        borderRadius: 10,
+        borderRadius: 12,
         marginBottom: 15,
-        paddingHorizontal: 10,
-        paddingVertical: 6,
+        paddingHorizontal: 12,
+        paddingVertical: Platform.OS === "android" ? 4 : 6,
+        minHeight: Platform.OS === "android" ? 56 : 50,
     },
     inputWithIcons: {
         flex: 1,
-        paddingVertical: 14,
+        paddingVertical: Platform.OS === "android" ? 16 : 14,
         paddingHorizontal: 10,
         color: "white",
+        fontSize: 16,
+        textAlignVertical: Platform.OS === "android" ? "center" : "auto",
     },
     inputAmountWithToken: {
         flex: 1,
-        paddingVertical: 14,
+        paddingVertical: Platform.OS === "android" ? 16 : 14,
         paddingHorizontal: 12,
         color: "white",
+        fontSize: 16,
+        textAlignVertical: Platform.OS === "android" ? "center" : "auto",
     },
     inputFocused: {
-        borderWidth: 1,
+        borderWidth: 2,
         borderColor: "#45AEF5",
     },
     pasteButton: {
         backgroundColor: "#2E3847",
-        paddingVertical: 8,
-        paddingHorizontal: 12,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
         borderRadius: 20,
         justifyContent: "center",
         alignItems: "center",
-        color: "white",
+        marginRight: 8,
+        minHeight: 36,
     },
     pasteText: {
         color: "white",
@@ -374,41 +467,59 @@ const styles = StyleSheet.create({
         fontSize: 12,
     },
     rightIcon: {
-        marginLeft: 10,
-        color: "#45AEF5",
+        marginLeft: 8,
+        padding: 4,
+        borderRadius: 20,
     },
     tokenBox: {
         flexDirection: "row",
         alignItems: "center",
         backgroundColor: "#2E3847",
         paddingVertical: 12,
-        paddingHorizontal: 8,
+        paddingHorizontal: 12,
         borderRadius: 20,
         marginRight: 10,
+        minHeight: 40,
+    },
+    tokenImage: {
+        width: 20,
+        height: 20,
+        marginRight: 8,
+        resizeMode: "contain",
     },
     tokenText: {
         color: "white",
         fontWeight: "600",
+        fontSize: 14,
+    },
+    chevronIcon: {
+        marginLeft: 4,
     },
     remainingRow: {
         flexDirection: "row",
         justifyContent: "flex-end",
-        gap: 10,
+        alignItems: "center",
+        gap: 15,
         marginBottom: 15,
+        paddingHorizontal: 5,
     },
     remainingText: {
         color: "#8994A3",
+        fontSize: 14,
     },
     maxText: {
         color: "#45AEF5",
-        fontWeight: "500",
+        fontWeight: "600",
+        fontSize: 14,
     },
     continueButton: {
         backgroundColor: "#378AC2",
-        paddingVertical: 14,
-        borderRadius: 10,
+        paddingVertical: 16,
+        borderRadius: 12,
         alignItems: "center",
-        marginTop: 10,
+        marginTop: 20,
+        minHeight: 50,
+        justifyContent: "center",
     },
     continueButtonDisabled: {
         backgroundColor: "#2E3847",
@@ -417,67 +528,86 @@ const styles = StyleSheet.create({
     continueText: {
         color: "white",
         fontWeight: "600",
-        fontSize: 14,
+        fontSize: 16,
     },
     modalOverlay: {
         flex: 1,
         justifyContent: "flex-end",
-        backgroundColor: "rgba(0, 0, 0, 0.4)",
+        backgroundColor: "rgba(0, 0, 0, 0.5)",
     },
     tokenModal: {
         backgroundColor: "#1D2633",
-        padding: 20,
+        paddingTop: 20,
+        paddingHorizontal: 20,
+        paddingBottom: Platform.OS === "android" ? 30 : 20,
         borderTopLeftRadius: 20,
         borderTopRightRadius: 20,
+        maxHeight: height * 0.6,
     },
     modalHeader: {
         flexDirection: "row",
         alignItems: "center",
         justifyContent: "space-between",
-        marginBottom: 10,
+        marginBottom: 20,
+        paddingBottom: 10,
     },
     modalTitle: {
         fontSize: 18,
         fontWeight: "600",
         color: "white",
-        marginBottom: 15,
+    },
+    closeButton: {
+        padding: 4,
+        borderRadius: 20,
+    },
+    walletList: {
+        maxHeight: height * 0.4,
     },
     modalToken: {
         backgroundColor: "#2E3847",
-        paddingVertical: 12,
-        paddingHorizontal: 12,
-        borderRadius: 10,
+        paddingVertical: 16,
+        paddingHorizontal: 16,
+        borderRadius: 12,
         flexDirection: "row",
         alignItems: "center",
-        marginBottom: 20,
+        marginBottom: 12,
+        minHeight: 52,
+    },
+    modalTokenText: {
+        color: "white",
+        fontSize: 16,
+        fontWeight: "500",
+    },
+    messageContainer: {
+        position: "absolute",
+        bottom: 0,
+        left: 0,
+        right: 0,
+        paddingHorizontal: 20,
+        paddingBottom: Platform.OS === "android" ? 30 : 40,
+        zIndex: 1000,
+    },
+    messageBox: {
+        paddingVertical: 16,
+        paddingHorizontal: 20,
+        borderRadius: 12,
+        alignItems: "center",
+        elevation: Platform.OS === "android" ? 5 : 0,
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.25,
+        shadowRadius: 3.84,
     },
     successMessage: {
-        backgroundColor: "#378AC2", // Blue background for success message
-        paddingVertical: 14,
-        paddingHorizontal: 20,
-        borderRadius: 10,
-        alignItems: "center",
-        marginTop: 20,
-        position: "absolute",
-        bottom: 50,
-        left: 20,
-        right: 20,
+        backgroundColor: "#378AC2",
     },
     errorMessage: {
-        backgroundColor: "red", // Blue background for success message
-        paddingVertical: 14,
-        paddingHorizontal: 20,
-        borderRadius: 10,
-        alignItems: "center",
-        marginTop: 20,
-        position: "absolute",
-        bottom: 50,
-        left: 20,
-        right: 20,
+        backgroundColor: "#E74C3C",
     },
-    successText: {
+    messageText: {
         color: "white",
         fontWeight: "600",
         fontSize: 14,
+        textAlign: "center",
     },
 });

@@ -8,10 +8,11 @@ import {
     Modal,
     Animated,
     Pressable,
-    Clipboard,
     Image,
     StatusBar,
     FlatList,
+    Clipboard,
+    ScrollView,
 } from "react-native";
 import { Ionicons, MaterialIcons } from "@expo/vector-icons";
 import { Colors } from "@/constants/Colors";
@@ -22,6 +23,7 @@ import axios from "axios";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
 interface DataState {
+    name?: string;
     ton_balance: string;
     non_bounceable_address: string;
 }
@@ -46,22 +48,24 @@ export default function Wallet() {
     const [fadeAnim] = useState(new Animated.Value(0));
 
     const handleCopy = (walletAddress: string) => {
-        Clipboard.setString(walletAddress);
-        setCopied(true);
+        if (walletAddress) {
+            Clipboard.setString(walletAddress);
+            setCopied(true);
 
-        Animated.timing(fadeAnim, {
-            toValue: 1,
-            duration: 300,
-            useNativeDriver: true,
-        }).start(() => {
-            setTimeout(() => {
-                Animated.timing(fadeAnim, {
-                    toValue: 0,
-                    duration: 300,
-                    useNativeDriver: true,
-                }).start(() => setCopied(false));
-            }, 2000);
-        });
+            Animated.timing(fadeAnim, {
+                toValue: 1,
+                duration: 300,
+                useNativeDriver: true,
+            }).start(() => {
+                setTimeout(() => {
+                    Animated.timing(fadeAnim, {
+                        toValue: 0,
+                        duration: 300,
+                        useNativeDriver: true,
+                    }).start(() => setCopied(false));
+                }, 2000);
+            });
+        }
     };
 
     const removeToken = async () => {
@@ -69,7 +73,7 @@ export default function Wallet() {
             await AsyncStorage.removeItem("token");
             router.replace("/welcome");
         } catch (error) {
-            console.error("Tokenni o‘chirishda xatolik:", error);
+            console.error("Tokenni o'chirishda xatolik:", error);
         }
     };
 
@@ -77,15 +81,12 @@ export default function Wallet() {
         setModalVisible(false);
     };
 
-    const handleCloseModal2 = () => {
-        setModalVisible2(false);
-    };
-
     const handleSelectWallet = async (wallet: Wallet) => {
         try {
-            await AsyncStorage.setItem("walletid", String(wallet.id)); // Stringga aylantirish
+            await AsyncStorage.setItem("walletid", String(wallet.id));
             setWalletid(String(wallet.id));
             setData({
+                name: wallet.name,
                 ton_balance: wallet.ton_balance,
                 non_bounceable_address: wallet.non_bounceable_address,
             });
@@ -95,12 +96,17 @@ export default function Wallet() {
         }
     };
 
+    const handleAddWallet = () => {
+        router.push("/addWallet");
+        handleCloseModal();
+    };
+
+    // Wallet details olish
     useEffect(() => {
         const getData = async () => {
-            const id = await AsyncStorage.getItem("walletid");
-            const token = await AsyncStorage.getItem("token");
-
             if (!walletid) return;
+
+            const token = await AsyncStorage.getItem("token");
 
             try {
                 const response = await axios.get(
@@ -112,8 +118,10 @@ export default function Wallet() {
                     }
                 );
 
-                setData(response.data[0]);
-                console.log(response.data[0]);
+                if (response.data && response.data.length > 0) {
+                    setData(response.data[0]);
+                    console.log(response.data[0]);
+                }
             } catch (error) {
                 console.error("Error fetching wallet details:", error);
             }
@@ -122,9 +130,10 @@ export default function Wallet() {
         getData();
     }, [walletid]);
 
+    // Barcha walletlarni olish
     useEffect(() => {
         const getData = async () => {
-            const id = await AsyncStorage.getItem("walletid");
+            const savedWalletId = await AsyncStorage.getItem("walletid");
             const token = await AsyncStorage.getItem("token");
 
             try {
@@ -138,10 +147,27 @@ export default function Wallet() {
                 );
 
                 setWallets(response.data);
-                if (response.data.length > 0 && !walletid) {
-                    const firstWalletId = String(response.data[0].id); // Stringga aylantirish
-                    setWalletid(firstWalletId);
-                    await AsyncStorage.setItem("walletid", firstWalletId);
+
+                // Agar walletid bo'lmasa yoki mavjud bo'lmasa, birinchi walletni tanlash
+                if (response.data.length > 0) {
+                    if (
+                        !savedWalletId ||
+                        !response.data.find(
+                            (w: Wallet) => w.id === savedWalletId
+                        )
+                    ) {
+                        const firstWalletId = String(response.data[0].id);
+                        setWalletid(firstWalletId);
+                        await AsyncStorage.setItem("walletid", firstWalletId);
+                        setData({
+                            name: response.data[0].name,
+                            ton_balance: response.data[0].ton_balance,
+                            non_bounceable_address:
+                                response.data[0].non_bounceable_address,
+                        });
+                    } else {
+                        setWalletid(savedWalletId);
+                    }
                 }
             } catch (error) {
                 console.error("Error fetching wallet details:", error);
@@ -199,8 +225,7 @@ export default function Wallet() {
                 >
                     <Ionicons name="wallet" size={20} color="white" />
                     <Text style={styles.walletText}>
-                        {/* @ts-ignore */}
-                        {data?.name}
+                        {data?.name || "Select Wallet"}
                     </Text>
                     <Ionicons
                         name="chevron-down"
@@ -213,25 +238,30 @@ export default function Wallet() {
                     onPress={removeToken}
                     style={styles.settingsIcon}
                 >
-                    <Ionicons name="settings-outline" size={24} color="white" />
+                    <Ionicons name="log-out-outline" size={24} color="white" />
                 </TouchableOpacity>
             </View>
 
             {/* Balance */}
             <Text style={styles.balance}>${data?.ton_balance || "0.00"}</Text>
+
+            {/* Address Container */}
             <View style={styles.addressContainer}>
-                <Text style={styles.address}>
-                    Your address:{" "}
-                    {data?.non_bounceable_address
-                        ? `${data.non_bounceable_address.slice(
-                              0,
-                              2
-                          )}...${data.non_bounceable_address.slice(-5)}`
-                        : "No address"}
+                <View style={styles.addressRow}>
+                    <Text style={styles.address}>
+                        Your address:{" "}
+                        {data?.non_bounceable_address
+                            ? `${data.non_bounceable_address.slice(
+                                  0,
+                                  2
+                              )}...${data.non_bounceable_address.slice(-5)}`
+                            : "No address"}
+                    </Text>
                     <Pressable
                         onPress={() =>
                             handleCopy(data?.non_bounceable_address || "")
                         }
+                        style={styles.copyButton}
                     >
                         <Ionicons
                             name="copy-outline"
@@ -239,7 +269,8 @@ export default function Wallet() {
                             color="#AFAFAF"
                         />
                     </Pressable>
-                </Text>
+                </View>
+
                 {copied && (
                     <Animated.View
                         style={[
@@ -254,89 +285,60 @@ export default function Wallet() {
 
             {/* Actions */}
             <View style={styles.actionsRow}>
-                <Link href="/sendModal">
-                    <View
-                        style={{
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexDirection: "column",
-                        }}
-                    >
+                <Link href="/sendModal" asChild>
+                    <TouchableOpacity style={styles.actionButton}>
                         <Feather
                             name="arrow-up-right"
                             size={20}
                             color="white"
                         />
-                        <Text style={{ color: "white", marginTop: 4 }}>
-                            Send
-                        </Text>
-                    </View>
+                        <Text style={styles.actionText}>Send</Text>
+                    </TouchableOpacity>
                 </Link>
-                <Link href="/show">
-                    <View
-                        style={{
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexDirection: "column",
-                        }}
-                    >
+
+                <Link href="/show" asChild>
+                    <TouchableOpacity style={styles.actionButton}>
                         <Feather
                             name="arrow-down-left"
                             size={20}
                             color="white"
                         />
-                        <Text style={{ color: "white", marginTop: 4 }}>
-                            Receive
-                        </Text>
-                    </View>
+                        <Text style={styles.actionText}>Receive</Text>
+                    </TouchableOpacity>
                 </Link>
-                <Link href="/scan">
-                    <View
-                        style={{
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexDirection: "column",
-                        }}
-                    >
+
+                <Link href="/scan" asChild>
+                    <TouchableOpacity style={styles.actionButton}>
                         <MaterialCommunityIcons
                             name="qrcode-scan"
                             size={20}
                             color="white"
                         />
-                        <Text style={{ color: "white", marginTop: 4 }}>
-                            Scan
-                        </Text>
-                    </View>
+                        <Text style={styles.actionText}>Scan</Text>
+                    </TouchableOpacity>
                 </Link>
             </View>
+
             <View style={styles.actionsRowCenter}>
-                <Link href="/swapModal">
-                    <View
-                        style={{
-                            alignItems: "center",
-                            justifyContent: "center",
-                            flexDirection: "column",
-                        }}
-                    >
+                <Link href="/swapModal" asChild>
+                    <TouchableOpacity style={styles.actionButton}>
                         <MaterialCommunityIcons
                             name="swap-horizontal"
                             size={20}
                             color="white"
                         />
-                        <Text style={{ color: "white", marginTop: 4 }}>
-                            Swap
-                        </Text>
-                    </View>
+                        <Text style={styles.actionText}>Swap</Text>
+                    </TouchableOpacity>
                 </Link>
             </View>
 
             {/* Finish Setting Up */}
             <Text style={styles.finishTitle}>Finish setting up</Text>
-            <View style={styles.finishSetup}>
+            <ScrollView style={styles.finishSetup}>
                 <View style={styles.settingItem}>
                     <Image
                         source={require("../../assets/images/ellipse1.png")}
-                        style={{ width: 40, height: 40, marginRight: 10 }}
+                        style={styles.settingIcon}
                     />
                     <Text style={styles.settingText}>
                         Enable transaction notifications
@@ -345,24 +347,29 @@ export default function Wallet() {
                         value={notificationsEnabled}
                         onValueChange={setNotificationsEnabled}
                         trackColor={{ false: "#767577", true: "#3599EA" }}
+                        thumbColor={
+                            notificationsEnabled ? "#ffffff" : "#f4f3f4"
+                        }
                     />
                 </View>
-                <View style={styles.settingItem}>
+
+                <TouchableOpacity style={styles.settingItem}>
                     <Image
                         source={require("../../assets/images/ellipse4.png")}
-                        style={{ width: 40, height: 40, marginRight: 10 }}
+                        style={styles.settingIcon}
                     />
                     <Text style={styles.settingText}>
                         Join ClickBit Channel
                     </Text>
-                    <TouchableOpacity style={styles.button}>
+                    <View style={styles.button}>
                         <Text style={styles.buttonText}>Open</Text>
-                    </TouchableOpacity>
-                </View>
+                    </View>
+                </TouchableOpacity>
+
                 <View style={styles.settingItem}>
                     <Image
                         source={require("../../assets/images/ellipse3.png")}
-                        style={{ width: 40, height: 40, marginRight: 10 }}
+                        style={styles.settingIcon}
                     />
                     <Text style={styles.settingText}>
                         Use Face ID to approve transactions
@@ -371,21 +378,22 @@ export default function Wallet() {
                         value={faceIdEnabled}
                         onValueChange={setFaceIdEnabled}
                         trackColor={{ false: "#767577", true: "#3599EA" }}
+                        thumbColor={faceIdEnabled ? "#ffffff" : "#f4f3f4"}
                     />
                 </View>
-                <View style={styles.settingItem}>
+
+                <TouchableOpacity style={styles.settingItem}>
                     <Image
                         source={require("../../assets/images/ellipse2.png")}
-                        style={{ width: 40, height: 40, marginRight: 10 }}
+                        style={styles.settingIcon}
                     />
                     <Text style={styles.settingText}>
-                        Back up the wallet’s recovery phrase
+                        Back up the wallet's recovery phrase
                     </Text>
                     <Ionicons name="chevron-forward" size={24} color="white" />
-                </View>
-            </View>
+                </TouchableOpacity>
+            </ScrollView>
 
-            {/* Wallet Selection Modal */}
             <Modal
                 animationType="slide"
                 transparent={true}
@@ -394,9 +402,10 @@ export default function Wallet() {
             >
                 <TouchableOpacity
                     style={styles.modalBackground}
+                    activeOpacity={1}
                     onPress={handleCloseModal}
                 >
-                    <View style={styles.modalContainer}>
+                    <Pressable style={styles.modalContainer} onPress={() => {}}>
                         <Text style={styles.modalTitle}>Select Wallet</Text>
                         {wallets.length === 0 ? (
                             <Text style={styles.noWalletsText}>
@@ -408,25 +417,26 @@ export default function Wallet() {
                                 renderItem={renderWalletItem}
                                 keyExtractor={(item) => item.id}
                                 style={styles.walletList}
+                                showsVerticalScrollIndicator={false}
                             />
                         )}
+
                         <TouchableOpacity
                             style={styles.addwallet}
-                            onPress={() => {
-                                router.push("/addWallet"), handleCloseModal;
-                            }}
+                            onPress={handleAddWallet}
                         >
                             <Text style={styles.addwallettext}>
-                               + Add wallet
+                                + Add wallet
                             </Text>
                         </TouchableOpacity>
+
                         <TouchableOpacity
                             style={styles.modalButton}
                             onPress={handleCloseModal}
                         >
                             <Text style={styles.modalButtonText}>Close</Text>
                         </TouchableOpacity>
-                    </View>
+                    </Pressable>
                 </TouchableOpacity>
             </Modal>
         </View>
@@ -437,7 +447,7 @@ const styles = StyleSheet.create({
     container: {
         flex: 1,
         backgroundColor: Colors.dark.background,
-        paddingTop: 60,
+        paddingTop: 40,
         paddingHorizontal: 20,
     },
     topBar: {
@@ -469,18 +479,28 @@ const styles = StyleSheet.create({
     balance: {
         color: "white",
         fontSize: 40,
+        fontWeight: "bold",
         textAlign: "center",
         marginVertical: 10,
     },
     addressContainer: {
         position: "relative",
         alignItems: "center",
+        marginBottom: 30,
+    },
+    addressRow: {
+        flexDirection: "row",
+        alignItems: "center",
+        justifyContent: "center",
     },
     address: {
         color: "#aaa",
         fontSize: 14,
         textAlign: "center",
-        marginBottom: 30,
+    },
+    copyButton: {
+        marginLeft: 8,
+        padding: 4,
     },
     copiedNotification: {
         position: "absolute",
@@ -497,32 +517,49 @@ const styles = StyleSheet.create({
     actionsRow: {
         flexDirection: "row",
         justifyContent: "space-evenly",
-        marginBottom: 30,
+        marginBottom: 20,
     },
     actionsRowCenter: {
         flexDirection: "row",
         justifyContent: "center",
         marginBottom: 30,
     },
+    actionButton: {
+        alignItems: "center",
+        justifyContent: "center",
+        flexDirection: "column",
+        padding: 10,
+    },
+    actionText: {
+        color: "white",
+        marginTop: 4,
+        fontSize: 14,
+    },
     finishSetup: {
         backgroundColor: "#222C3A",
         borderRadius: 10,
-        paddingVertical: 20,
+        paddingVertical: 10,
         paddingHorizontal: 10,
     },
     finishTitle: {
         color: "white",
         fontSize: 18,
+        fontWeight: "600",
         marginBottom: 20,
     },
     settingItem: {
         flexDirection: "row",
         alignItems: "center",
         marginBottom: 20,
+        paddingHorizontal: 10,
+    },
+    settingIcon: {
+        width: 40,
+        height: 40,
+        marginRight: 15,
     },
     settingText: {
         flex: 1,
-        marginLeft: 10,
         color: "white",
         fontSize: 14,
     },
@@ -534,6 +571,7 @@ const styles = StyleSheet.create({
     },
     buttonText: {
         color: "white",
+        fontSize: 14,
     },
     modalBackground: {
         flex: 1,
@@ -562,6 +600,7 @@ const styles = StyleSheet.create({
     },
     walletList: {
         flexGrow: 0,
+        maxHeight: 400,
     },
     walletCard: {
         backgroundColor: "#293342",
@@ -583,7 +622,7 @@ const styles = StyleSheet.create({
         backgroundColor: "#3599EA",
         borderRadius: 8,
         padding: 8,
-        marginRight: 10,
+        marginRight: 15,
     },
     walletInfo: {
         flex: 1,
@@ -606,17 +645,17 @@ const styles = StyleSheet.create({
     modalButton: {
         backgroundColor: "#378AC2",
         paddingHorizontal: 12,
-        paddingVertical: 10,
+        paddingVertical: 12,
         borderRadius: 10,
         alignItems: "center",
-        marginTop: 10,
+        marginTop: 15,
     },
     addwallet: {
         borderStyle: "dashed",
         borderWidth: 1,
         borderColor: "#378AC2",
         paddingHorizontal: 12,
-        paddingVertical: 10,
+        paddingVertical: 12,
         borderRadius: 10,
         alignItems: "center",
         marginTop: 10,

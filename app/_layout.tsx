@@ -32,7 +32,7 @@ export default function RootLayout() {
                 }}
             />
             <Stack.Screen
-                name="swapModal"
+                name="SwapModal"
                 options={{
                     presentation: "modal",
                 }}

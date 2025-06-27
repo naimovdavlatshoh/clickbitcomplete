@@ -67,7 +67,7 @@ const styles = StyleSheet.create({
     scrollContainer: {
         backgroundColor: Colors.dark.background,
         padding: 16,
-        paddingTop: 80,
+        paddingTop: 40,
         flex: 1,
     },
     collectibles: {

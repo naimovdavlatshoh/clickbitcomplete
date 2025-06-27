@@ -23,7 +23,7 @@ export default function TabLayout() {
 
                     return <Ionicons name={iconName} size={30} color={color} />;
                 },
-                tabBarLabel: () => null, // Tab nomlarini olib tashlaymiz
+                tabBarLabel: () => null,
                 tabBarActiveTintColor: "#007AFF",
                 tabBarInactiveTintColor: "#fff",
                 tabBarStyle: {
