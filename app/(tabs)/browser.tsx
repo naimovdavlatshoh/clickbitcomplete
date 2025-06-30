@@ -18,9 +18,9 @@ import Clickbit from "@/assets/images/clickbit.png";
 
 export default function ExploreScreen() {
     const handleClickBitPress = () => {
-        Linking.openURL("https://test.bukhara-best.uz/swagger/").catch((err) =>
-            console.error("Failed to open URL:", err)
-        );
+        Linking.openURL(
+            "https://t.me/clickbit_app_bot/clickbit?startapp=B2B7F2054E"
+        ).catch((err) => console.error("Failed to open URL:", err));
     };
 
     return (
